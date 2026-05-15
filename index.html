@@ -36,9 +36,15 @@ window.fbSave = async function(state, code) {
 // Listen for changes in real time
 window.fbListen = function(codeOrCallback, callback) {
   let code, cb;
-  if(typeof codeOrCallback === 'string'){ code=codeOrCallback; cb=callback; }
-  else { code=localStorage.getItem('tripCode')||'mytrip'; cb=codeOrCallback; }
-  onSnapshot(doc(db, 'trips', code), (snap) => {
+  if(typeof codeOrCallback === 'string'){
+    code = codeOrCallback;
+    cb = callback;
+  } else {
+    code = localStorage.getItem('tripCode') || 'mytrip';
+    cb = codeOrCallback;
+  }
+  console.log('Firebase listening to trip:', code);
+  return onSnapshot(doc(db, 'trips', code), (snap) => {
     if(snap.exists()) cb(snap.data());
   });
 };
@@ -1360,18 +1366,39 @@ function joinTripFromModal() {
   const inp = document.getElementById('join-code-input');
   const code = inp.value.trim().toUpperCase();
   if(code.length !== 6){toast('Enter a 6-letter code');return;}
+  
+  // Save the new trip code
   localStorage.setItem('tripCode', code);
   tripCode = code;
-  if(window.fbListen) {
-    window.fbListen(code, (data)=>{
-      S = {...S, ...data};
-      try{localStorage.setItem('et3',JSON.stringify(S));}catch(e){}
-      renderAll();
-    });
-  }
   inp.value = '';
   closeModal('modal-share');
-  toast('Joined trip! 🎉 Syncing...');
+  toast('Joining trip... ⏳');
+
+  // If Firebase is ready, listen to the new trip document
+  if(window.firebaseReady && window.fbListen) {
+    window.fbListen(code, (data) => {
+      if(data && Object.keys(data).length > 0) {
+        S = {...S, ...data};
+        try{localStorage.setItem('et3', JSON.stringify(S));}catch(e){}
+        renderAll();
+        toast('Joined! 🎉 Trip synced');
+      }
+    });
+  } else {
+    // Firebase not ready yet, wait for it
+    document.addEventListener('firebase-ready', () => {
+      if(window.fbListen) {
+        window.fbListen(code, (data) => {
+          if(data && Object.keys(data).length > 0) {
+            S = {...S, ...data};
+            try{localStorage.setItem('et3', JSON.stringify(S));}catch(e){}
+            renderAll();
+            toast('Joined! 🎉 Trip synced');
+          }
+        });
+      }
+    });
+  }
 }
 
 async function confirmAddPlace(placeName) {
