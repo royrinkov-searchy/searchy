@@ -7,6 +7,41 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EuroTrip">
 <title>EuroTrip Planner</title>
+<script type="module">
+// ── FIREBASE ──
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAxwEmAvxoeICBdi5Hs9PgUKnVSJB0A7oE",
+  authDomain: "searchy-f1fa4.firebaseapp.com",
+  projectId: "searchy-f1fa4",
+  storageBucket: "searchy-f1fa4.firebasestorage.app",
+  messagingSenderId: "68942282922",
+  appId: "1:68942282922:web:531d5dbecaeb523ffb90d3"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const TRIP_ID = 'mytrip'; // change this if you want multiple trips
+
+// Save to Firestore
+window.fbSave = async function(state) {
+  try {
+    await setDoc(doc(db, 'trips', TRIP_ID), state);
+  } catch(e) { console.warn('Firebase save failed:', e); }
+};
+
+// Listen for changes in real time
+window.fbListen = function(callback) {
+  onSnapshot(doc(db, 'trips', TRIP_ID), (snap) => {
+    if(snap.exists()) callback(snap.data());
+  });
+};
+
+window.firebaseReady = true;
+document.dispatchEvent(new Event('firebase-ready'));
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -515,8 +550,17 @@ let S = {
 };
 let activeCityId=null, activeDayId=null;
 
-function save(){try{localStorage.setItem('et3',JSON.stringify(S));}catch(e){}}
-function load(){try{const d=localStorage.getItem('et3');if(d)S={...S,...JSON.parse(d)};}catch(e){}}
+let _fbSaveTimer = null;
+function save() {
+  try { localStorage.setItem('et3', JSON.stringify(S)); } catch(e) {}
+  clearTimeout(_fbSaveTimer);
+  _fbSaveTimer = setTimeout(() => {
+    if(window.fbSave) window.fbSave(JSON.parse(JSON.stringify(S)));
+  }, 1000);
+}
+function load() {
+  try { const d=localStorage.getItem('et3'); if(d) S={...S,...JSON.parse(d)}; } catch(e) {}
+}
 
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
@@ -1208,6 +1252,41 @@ document.querySelectorAll('.curr-btn').forEach(b=>b.classList.toggle('active',b.
 document.querySelectorAll('#curr-symbol,#city-exp-curr,#global-exp-curr').forEach(el=>el.textContent=S.currency.symbol);
 renderMyTrip();renderGlobalExp();refreshBudget();renderPacking();
 filterCountries('');
+
+// Firebase real-time sync
+let _fbFirstLoad = true;
+function setupFirebaseSync() {
+  if(!window.fbListen) return;
+  window.fbListen((data) => {
+    if(_fbFirstLoad) {
+      // On first load, merge Firebase data (cloud wins over local)
+      S = {...S, ...data};
+      _fbFirstLoad = false;
+      try { localStorage.setItem('et3', JSON.stringify(S)); } catch(e) {}
+      // Re-render everything
+      if(S.tripName) document.getElementById('tripName').value = S.tripName;
+      if(S.budget) document.getElementById('budget-input').value = S.budget;
+      document.querySelectorAll('.curr-btn').forEach(b=>b.classList.toggle('active',b.textContent.includes(S.currency.code)));
+      document.querySelectorAll('#curr-symbol,#city-exp-curr,#global-exp-curr').forEach(el=>el.textContent=S.currency.symbol);
+      renderMyTrip();renderGlobalExp();refreshBudget();renderPacking();
+      initPack();
+      filterCountries('');
+      toast('☁️ Data synced!');
+    } else {
+      // On subsequent changes from another device
+      S = {...S, ...data};
+      try { localStorage.setItem('et3', JSON.stringify(S)); } catch(e) {}
+      renderMyTrip();renderGlobalExp();refreshBudget();renderPacking();
+    }
+  });
+}
+
+// Wait for Firebase to be ready
+if(window.firebaseReady) {
+  setupFirebaseSync();
+} else {
+  document.addEventListener('firebase-ready', setupFirebaseSync);
+}
 </script>
 </body>
 </html>
