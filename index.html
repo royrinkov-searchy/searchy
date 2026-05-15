@@ -521,7 +521,7 @@ label:first-child{margin-top:0;}
       <!-- Join Trip panel -->
       <div id="share-panel-join" style="display:none;">
         <p style="font-size:14px;color:var(--sub);margin-bottom:10px;">Enter the 6-letter code your travel partner shared with you.</p>
-        <input type="text" id="join-code-input" placeholder="ABC123" style="text-align:center;font-size:24px;letter-spacing:8px;text-transform:uppercase;margin-bottom:12px;" maxlength="6" oninput="this.value=this.value.toUpperCase()">
+        <input type="text" id="join-code-input" placeholder="e.g. FBM5ZJ" style="text-align:center;font-size:24px;letter-spacing:8px;text-transform:uppercase;margin-bottom:12px;" maxlength="8">
         <button class="btn-primary green" onclick="joinTripFromModal()">Join Their Trip →</button>
       </div>
 
@@ -1364,17 +1364,16 @@ function showShareTab(tab) {
 
 function joinTripFromModal() {
   const inp = document.getElementById('join-code-input');
-  const code = inp.value.trim().toUpperCase();
-  if(code.length !== 6){toast('Enter a 6-letter code');return;}
+  const code = inp.value.replace(/\s/g,'').toUpperCase();
+  console.log('Joining with code:', code, 'length:', code.length);
+  if(code.length < 4){toast('Enter the 6-letter code');return;}
   
-  // Save the new trip code
   localStorage.setItem('tripCode', code);
   tripCode = code;
   inp.value = '';
   closeModal('modal-share');
-  toast('Joining trip... ⏳');
+  toast('Joining... ⏳');
 
-  // If Firebase is ready, listen to the new trip document
   if(window.firebaseReady && window.fbListen) {
     window.fbListen(code, (data) => {
       if(data && Object.keys(data).length > 0) {
@@ -1385,7 +1384,6 @@ function joinTripFromModal() {
       }
     });
   } else {
-    // Firebase not ready yet, wait for it
     document.addEventListener('firebase-ready', () => {
       if(window.fbListen) {
         window.fbListen(code, (data) => {
