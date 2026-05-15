@@ -49,6 +49,41 @@ window.fbListen = function(codeOrCallback, callback) {
   });
 };
 
+// Initialize trip code immediately
+const _tripCode = localStorage.getItem('tripCode') || (()=>{
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const code=Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+  localStorage.setItem('tripCode',code);
+  return code;
+})();
+window._TRIP_CODE = _tripCode;
+
+window.fbSave = async function(state) {
+  try {
+    await setDoc(doc(db, 'trips', window._TRIP_CODE), state);
+  } catch(e) { console.warn('Firebase save failed:', e); }
+};
+
+window.fbListen = function(codeOrCallback, callback) {
+  let code, cb;
+  if(typeof codeOrCallback === 'string'){ code=codeOrCallback; cb=callback; }
+  else { code=window._TRIP_CODE; cb=codeOrCallback; }
+  console.log('Listening to trip code:', code);
+  return onSnapshot(doc(db, 'trips', code), (snap) => {
+    if(snap.exists()) cb(snap.data());
+    else cb({});
+  });
+};
+
+window.fbSwitchTrip = function(newCode, callback) {
+  window._TRIP_CODE = newCode;
+  localStorage.setItem('tripCode', newCode);
+  return onSnapshot(doc(db, 'trips', newCode), (snap) => {
+    if(snap.exists()) callback(snap.data());
+    else callback({});
+  });
+};
+
 window.firebaseReady = true;
 document.dispatchEvent(new Event('firebase-ready'));
 </script>
@@ -689,9 +724,9 @@ function getTripCode() {
 }
 
 function openShareModal() {
-  tripCode = getTripCode();
-  document.getElementById('share-trip-code').textContent = tripCode;
-  // Update Firebase TRIP_ID to use this code
+  const code = window._TRIP_CODE || localStorage.getItem('tripCode') || '------';
+  tripCode = code;
+  document.getElementById('share-trip-code').textContent = code;
   openModal('modal-share');
 }
 
@@ -747,7 +782,7 @@ function save() {
   try { localStorage.setItem('et3', JSON.stringify(S)); } catch(e) {}
   clearTimeout(_fbSaveTimer);
   _fbSaveTimer = setTimeout(() => {
-    if(window.fbSave) window.fbSave(JSON.parse(JSON.stringify(S)), localStorage.getItem('tripCode')||'mytrip');
+    if(window.fbSave) window.fbSave(JSON.parse(JSON.stringify(S)));
   }, 1000);
 }
 function load() {
@@ -1367,33 +1402,30 @@ function joinTripFromModal() {
   const code = inp.value.replace(/\s/g,'').toUpperCase();
   if(code.length < 4){toast('Enter the trip code');return;}
 
-  localStorage.setItem('tripCode', code);
-  tripCode = code;
   inp.value = '';
   closeModal('modal-share');
   toast('Joining... ⏳');
 
-  function doListen() {
-    window.fbListen(code, (data) => {
+  function doSwitch() {
+    window.fbSwitchTrip(code, (data) => {
       if(data && Object.keys(data).length > 0) {
         S = {...S, ...data};
         try{localStorage.setItem('et3', JSON.stringify(S));}catch(e){}
         renderAll();
         toast('Joined! 🎉 Trip synced');
       } else {
-        toast('Code not found — check it and try again');
+        toast('No data found for that code yet');
       }
     });
   }
 
-  if(window.fbListen) {
-    doListen();
+  if(window.fbSwitchTrip) {
+    doSwitch();
   } else {
-    // poll until ready
     let attempts = 0;
     const interval = setInterval(()=>{
       attempts++;
-      if(window.fbListen){ clearInterval(interval); doListen(); }
+      if(window.fbSwitchTrip){ clearInterval(interval); doSwitch(); }
       if(attempts > 20){ clearInterval(interval); toast('Connection failed — try again'); }
     }, 300);
   }
@@ -1536,15 +1568,19 @@ function setupFirebaseSync() {
   if(!window.fbListen) return;
   window.fbListen((data) => {
     if(_fbFirstLoad) {
-      S = {...S, ...data};
       _fbFirstLoad = false;
-      try { localStorage.setItem('et3', JSON.stringify(S)); } catch(e) {}
-      renderAll();
-      toast('☁️ Synced');
+      if(data && Object.keys(data).length > 0) {
+        S = {...S, ...data};
+        try { localStorage.setItem('et3', JSON.stringify(S)); } catch(e) {}
+        renderAll();
+        toast('☁️ Synced');
+      }
     } else {
-      S = {...S, ...data};
-      try { localStorage.setItem('et3', JSON.stringify(S)); } catch(e) {}
-      renderMyTrip();renderGlobalExp();refreshBudget();renderPacking();
+      if(data && Object.keys(data).length > 0) {
+        S = {...S, ...data};
+        try { localStorage.setItem('et3', JSON.stringify(S)); } catch(e) {}
+        renderMyTrip();renderGlobalExp();refreshBudget();renderPacking();
+      }
     }
   });
 }
