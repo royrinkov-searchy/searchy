@@ -455,14 +455,15 @@ function liveSearchFood(q){
   foodTimer=setTimeout(async()=>{
     const c=city();
     const cityName=c?c.name:'the destination';
-    const prompt=`List 5 real food places or dishes matching "${q}" in ${cityName}. JSON array only, no markdown:\n[{"icon":"emoji","name":"Name","type":"Restaurant/Café/Bar/Market/Dish","desc":"One sentence"}]`;
     try{
-      const results=await callGemini(prompt);
+      const r=await fetch(GEMINI_SMART_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:`List 5 food places or dishes matching "${q}" in ${cityName}. Reply ONLY with a JSON array, no markdown:\n[{"icon":"emoji","name":"name","type":"Restaurant","desc":"one sentence"}]`}]}]})});
+      const d=await r.json();
+      const txt=(d?.candidates?.[0]?.content?.parts?.[0]?.text||'').replace(/```json|```/g,'').trim();
+      const arr=JSON.parse(txt.slice(txt.indexOf('['),txt.lastIndexOf(']')+1));
       spin.style.display='none';
-      if(!Array.isArray(results)||!results.length){sug.innerHTML='<p style="font-size:13px;color:var(--muted);padding:8px 0;">No suggestions — type to add manually</p>';return;}
-      window._foodSug=results;
-      sug.innerHTML=results.map((r,i)=>`<div class="suggest-row" onclick="pickFood(${i})"><div class="suggest-icon">${r.icon||'🍽️'}</div><div><div class="suggest-name">${r.name}</div><div class="suggest-sub">${r.desc||''}</div><span class="suggest-badge">${r.type||'Food'}</span></div></div>`).join('');
-    }catch(e){spin.style.display='none';sug.innerHTML=`<p style="font-size:12px;color:var(--rust);padding:8px 0;">Error — type name manually</p>`;}
+      window._foodSug=arr;
+      sug.innerHTML=arr.map((x,i)=>`<div class="suggest-row" onclick="pickFood(${i})"><div class="suggest-icon">${x.icon||'🍽️'}</div><div><div class="suggest-name">${x.name}</div><div class="suggest-sub">${x.desc||''}</div><span class="suggest-badge">${x.type||'Food'}</span></div></div>`).join('');
+    }catch(e){spin.style.display='none';sug.innerHTML='';}
   },400);
 }
 function pickFood(i){
@@ -487,14 +488,15 @@ function liveSearchSight(q){
   sightTimer=setTimeout(async()=>{
     const c=city();
     const cityName=c?c.name:'the destination';
-    const prompt=`List 5 real attractions matching "${q}" in ${cityName}. JSON array only, no markdown:\n[{"icon":"emoji","name":"Name","desc":"One sentence","cost":"Price or Free","mapsQuery":"Maps search string"}]`;
     try{
-      const results=await callGemini(prompt);
+      const r=await fetch(GEMINI_SMART_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:`List 5 attractions matching "${q}" in ${cityName}. Reply ONLY with a JSON array, no markdown:\n[{"icon":"emoji","name":"name","desc":"one sentence","cost":"price or Free"}]`}]}]})});
+      const d=await r.json();
+      const txt=(d?.candidates?.[0]?.content?.parts?.[0]?.text||'').replace(/```json|```/g,'').trim();
+      const arr=JSON.parse(txt.slice(txt.indexOf('['),txt.lastIndexOf(']')+1));
       spin.style.display='none';
-      if(!Array.isArray(results)||!results.length){sug.innerHTML='<p style="font-size:13px;color:var(--muted);padding:8px 0;">No suggestions — type to add manually</p>';return;}
-      window._sightSug=results;
-      sug.innerHTML=results.map((r,i)=>`<div class="suggest-row" onclick="pickSight(${i})"><div class="suggest-icon">${r.icon||'📍'}</div><div><div class="suggest-name">${r.name}</div><div class="suggest-sub">${r.desc||''}</div>${r.cost?`<span class="suggest-badge">${r.cost}</span>`:''}</div></div>`).join('');
-    }catch(e){spin.style.display='none';sug.innerHTML=`<p style="font-size:12px;color:var(--rust);padding:8px 0;">Error — type name manually</p>`;}
+      window._sightSug=arr;
+      sug.innerHTML=arr.map((x,i)=>`<div class="suggest-row" onclick="pickSight(${i})"><div class="suggest-icon">${x.icon||'📍'}</div><div><div class="suggest-name">${x.name}</div><div class="suggest-sub">${x.desc||''}</div>${x.cost?`<span class="suggest-badge">${x.cost}</span>`:''}</div></div>`).join('');
+    }catch(e){spin.style.display='none';sug.innerHTML='';}
   },400);
 }
 function pickSight(i){
