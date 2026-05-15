@@ -499,7 +499,7 @@ label:first-child{margin-top:0;}
 
 <!-- Share Trip Modal -->
 <div class="modal-overlay" id="modal-share" onclick="closeBg(event,'modal-share')">
-  <div class="modal">
+  <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
     <div class="modal-header"><div class="modal-title">Trip Sharing</div><button class="btn-text" onclick="closeModal('modal-share')">Done</button></div>
     <div class="modal-body">
@@ -521,8 +521,8 @@ label:first-child{margin-top:0;}
       <!-- Join Trip panel -->
       <div id="share-panel-join" style="display:none;">
         <p style="font-size:14px;color:var(--sub);margin-bottom:10px;">Enter the 6-letter code your travel partner shared with you.</p>
-        <input type="text" id="join-code-input" placeholder="e.g. FBM5ZJ" style="text-align:center;font-size:24px;letter-spacing:8px;text-transform:uppercase;margin-bottom:12px;" maxlength="8">
-        <button class="btn-primary green" onclick="joinTripFromModal()">Join Their Trip →</button>
+        <input type="text" id="join-code-input" placeholder="e.g. FBM5ZJ" style="text-align:center;font-size:24px;letter-spacing:8px;text-transform:uppercase;margin-bottom:12px;" maxlength="8" onkeydown="if(event.key==='Enter'){event.preventDefault();joinTripFromModal();}">
+        <button class="btn-primary green" type="button" onclick="event.stopPropagation();joinTripFromModal();">Join Their Trip →</button>
       </div>
 
     </div>
@@ -1365,37 +1365,37 @@ function showShareTab(tab) {
 function joinTripFromModal() {
   const inp = document.getElementById('join-code-input');
   const code = inp.value.replace(/\s/g,'').toUpperCase();
-  console.log('Joining with code:', code, 'length:', code.length);
-  if(code.length < 4){toast('Enter the 6-letter code');return;}
-  
+  if(code.length < 4){toast('Enter the trip code');return;}
+
   localStorage.setItem('tripCode', code);
   tripCode = code;
   inp.value = '';
   closeModal('modal-share');
   toast('Joining... ⏳');
 
-  if(window.firebaseReady && window.fbListen) {
+  function doListen() {
     window.fbListen(code, (data) => {
       if(data && Object.keys(data).length > 0) {
         S = {...S, ...data};
         try{localStorage.setItem('et3', JSON.stringify(S));}catch(e){}
         renderAll();
         toast('Joined! 🎉 Trip synced');
+      } else {
+        toast('Code not found — check it and try again');
       }
     });
+  }
+
+  if(window.fbListen) {
+    doListen();
   } else {
-    document.addEventListener('firebase-ready', () => {
-      if(window.fbListen) {
-        window.fbListen(code, (data) => {
-          if(data && Object.keys(data).length > 0) {
-            S = {...S, ...data};
-            try{localStorage.setItem('et3', JSON.stringify(S));}catch(e){}
-            renderAll();
-            toast('Joined! 🎉 Trip synced');
-          }
-        });
-      }
-    });
+    // poll until ready
+    let attempts = 0;
+    const interval = setInterval(()=>{
+      attempts++;
+      if(window.fbListen){ clearInterval(interval); doListen(); }
+      if(attempts > 20){ clearInterval(interval); toast('Connection failed — try again'); }
+    }, 300);
   }
 }
 
