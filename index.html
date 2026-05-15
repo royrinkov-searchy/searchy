@@ -23,31 +23,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const TRIP_ID = 'mytrip'; // change this if you want multiple trips
+// Trip code initialized below
 
-// Save to Firestore
-window.fbSave = async function(state, code) {
-  try {
-    const tid = code || localStorage.getItem('tripCode') || 'mytrip';
-    await setDoc(doc(db, 'trips', tid), state);
-  } catch(e) { console.warn('Firebase save failed:', e); }
-};
+// Save to Firestore — removed, defined below after trip code init
 
-// Listen for changes in real time
-window.fbListen = function(codeOrCallback, callback) {
-  let code, cb;
-  if(typeof codeOrCallback === 'string'){
-    code = codeOrCallback;
-    cb = callback;
-  } else {
-    code = localStorage.getItem('tripCode') || 'mytrip';
-    cb = codeOrCallback;
-  }
-  console.log('Firebase listening to trip:', code);
-  return onSnapshot(doc(db, 'trips', code), (snap) => {
-    if(snap.exists()) cb(snap.data());
-  });
-};
+// Listen for changes — removed, defined below after trip code init
 
 // Initialize trip code immediately
 const _tripCode = localStorage.getItem('tripCode') || (()=>{
