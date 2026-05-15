@@ -1554,6 +1554,20 @@ function setupFirebaseSync() {
         try { localStorage.setItem('et3', JSON.stringify(S)); } catch(e) {}
         renderAll();
         toast('☁️ Synced');
+      } else {
+        // No data under trip code — migrate from mytrip if exists
+        if(window.fbListen) {
+          window.fbListen('mytrip', (oldData) => {
+            if(oldData && Object.keys(oldData).length > 0 && oldData.tripCities) {
+              S = {...S, ...oldData};
+              try { localStorage.setItem('et3', JSON.stringify(S)); } catch(e) {}
+              // Save under new trip code
+              if(window.fbSave) window.fbSave(JSON.parse(JSON.stringify(S)));
+              renderAll();
+              toast('☁️ Data migrated!');
+            }
+          });
+        }
       }
     } else {
       if(data && Object.keys(data).length > 0) {
