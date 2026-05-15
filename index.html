@@ -301,25 +301,11 @@ label:first-child{margin-top:0;}
       <div id="country-results"></div>
     </div>
 
-    <!-- Step 2: Region search -->
-    <div id="step-region" style="display:none;">
-      <button class="btn-ghost" style="margin-bottom:16px;" onclick="goToStep('country')">← Countries</button>
-      <div id="step-region-header" style="margin-bottom:16px;"></div>
-      <p class="section-sub">Search for a region, area or go straight to a city</p>
-      <div style="position:relative;margin-bottom:12px;">
-        <input type="text" id="inp-region" placeholder="e.g. Catalonia, Tuscany, or skip..." oninput="filterRegions(this.value)" autocomplete="off" style="padding-right:40px;">
-        <div style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none;">🔍</div>
-      </div>
-      <div id="region-results"></div>
-      <div class="divider"></div>
-      <button class="btn-ghost" style="width:100%;" onclick="skipRegion()">Skip — add a city directly →</button>
-    </div>
-
-    <!-- Step 3: Place search -->
+    <!-- Step 2: City search -->
     <div id="step-place" style="display:none;">
-      <button class="btn-ghost" style="margin-bottom:16px;" onclick="goToStep('region')">← Regions</button>
+      <button class="btn-ghost" style="margin-bottom:16px;" onclick="goToStep('country')">← Countries</button>
       <div id="step-place-header" style="margin-bottom:16px;"></div>
-      <p class="section-sub">Search for a city, town or specific area</p>
+      <p class="section-sub">Search for a city or area</p>
       <div style="position:relative;margin-bottom:12px;">
         <input type="text" id="inp-place" placeholder="e.g. Barcelona, Costa Brava..." oninput="filterPlaces(this.value)" autocomplete="off" style="padding-right:40px;">
         <div style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none;">🔍</div>
@@ -329,16 +315,16 @@ label:first-child{margin-top:0;}
       <p style="font-size:13px;color:var(--sub);margin-bottom:10px;">Don't see it? Add it directly:</p>
       <div style="display:flex;gap:10px;">
         <input type="text" id="inp-custom-place" placeholder="Type any place name..." style="flex:1;">
-        <button class="btn-sm" onclick="addCustomPlace()" style="white-space:nowrap;padding:11px 16px;">+ Add</button>
+        <button class="btn-sm" onclick="addCustomPlace()" style="padding:12px 16px;">+ Add</button>
       </div>
     </div>
 
-    <!-- Step 4: AI loading -->
+    <!-- Step 3: AI loading -->
     <div id="step-loading" style="display:none;text-align:center;padding:60px 20px;">
       <div style="font-size:48px;margin-bottom:16px;">✨</div>
       <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;margin-bottom:8px;" id="loading-place-name"></div>
       <div style="font-size:14px;color:var(--sub);" id="loading-msg">Generating attractions & tips...</div>
-      <div style="margin-top:24px;display:flex;justify-content:center;gap:6px;" id="loading-dots">
+      <div style="margin-top:24px;display:flex;justify-content:center;gap:6px;">
         <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.2s ease-in-out infinite;"></div>
         <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.2s ease-in-out 0.4s infinite;"></div>
         <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.2s ease-in-out 0.8s infinite;"></div>
@@ -509,14 +495,23 @@ label:first-child{margin-top:0;}
 <div class="modal-overlay" id="modal-share" onclick="closeBg(event,'modal-share')">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-header"><div class="modal-title">Share Trip</div><button class="btn-text" onclick="closeModal('modal-share')">Done</button></div>
+    <div class="modal-header"><div class="modal-title">Trip Sharing</div><button class="btn-text" onclick="closeModal('modal-share')">Done</button></div>
     <div class="modal-body">
-      <p style="font-size:14px;color:var(--sub);margin-bottom:12px;">Share this code with your travel partner. They open the app → tap ＋ → enter the code.</p>
+
+      <p style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--sub);margin-bottom:8px;">Your Trip Code</p>
+      <p style="font-size:14px;color:var(--sub);margin-bottom:10px;">Share this with your travel partner so they can join.</p>
       <div class="trip-code" id="share-trip-code">——</div>
-      <button class="btn-primary" style="margin-bottom:10px;" onclick="copyTripCode()">📋 Copy Code</button>
+      <button class="btn-primary" style="margin-bottom:20px;" onclick="copyTripCode()">📋 Copy Code</button>
+
       <div class="divider"></div>
-      <p style="font-size:14px;font-weight:600;margin-bottom:10px;">Partner</p>
-      <div id="partner-status" style="font-size:14px;color:var(--sub);">No partner connected yet</div>
+
+      <p style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--sub);margin-bottom:8px;">Join a Friend's Trip</p>
+      <p style="font-size:14px;color:var(--sub);margin-bottom:10px;">Enter the code your partner shared with you.</p>
+      <input type="text" id="join-code-input" placeholder="Enter 6-letter code" style="text-align:center;font-size:20px;letter-spacing:6px;text-transform:uppercase;margin-bottom:10px;" maxlength="6">
+      <button class="btn-primary green" onclick="joinTripFromModal()">Join Their Trip</button>
+
+      <div class="divider"></div>
+      <div id="partner-status" style="font-size:14px;color:var(--sub);text-align:center;">No partner connected yet</div>
     </div>
   </div>
 </div>
@@ -1242,87 +1237,98 @@ const PLACES = {
   'Fès-Meknès': ['Fès','Meknès','Ifrane','Volubilis'],
 };
 
-let selCountry=null, selRegion=null;
+let selCountry=null;
 
 function goToStep(step) {
-  ['country','region','place','loading'].forEach(s=>document.getElementById('step-'+s).style.display='none');
-  document.getElementById('step-'+step).style.display='block';
-  if(step==='country'){document.getElementById('inp-country').value='';document.getElementById('country-results').innerHTML='';selCountry=null;selRegion=null;}
-  if(step==='region'){document.getElementById('inp-region').value='';filterRegions('');}
-  if(step==='place'){document.getElementById('inp-place').value='';filterPlaces('');}
+  ['country','place','loading'].forEach(s=>{
+    const el=document.getElementById('step-'+s);
+    if(el) el.style.display='none';
+  });
+  const target=document.getElementById('step-'+step);
+  if(target) target.style.display='block';
+  if(step==='country'){
+    document.getElementById('inp-country').value='';
+    document.getElementById('country-results').innerHTML='';
+    selCountry=null;
+    filterCountries('');
+  }
+  if(step==='place'){
+    document.getElementById('inp-place').value='';
+    filterPlaces('');
+  }
 }
 
 function filterCountries(q) {
   const res=document.getElementById('country-results');
   const matches = q.length<1
-    ? COUNTRIES.slice(0,12)
+    ? COUNTRIES.slice(0,16)
     : COUNTRIES.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())).slice(0,10);
   res.innerHTML = matches.map(c=>`
     <div class="search-result-row" onclick="selectCountry('${c.name}','${c.flag}')">
       <div class="srr-flag">${c.flag}</div>
       <div class="srr-main"><div class="srr-name">${c.name}</div></div>
       <div class="srr-arrow">›</div>
-    </div>`).join('') || '<p style="font-size:13px;color:var(--sub);text-align:center;padding:16px;">No results</p>';
+    </div>`).join('') || '<p style="font-size:14px;color:var(--sub);padding:16px;">No results</p>';
 }
 
 function selectCountry(name, flag) {
   selCountry={name,flag};
-  document.getElementById('step-region-header').innerHTML=`<div style="display:flex;align-items:center;gap:10px;"><div style="font-size:28px;">${flag}</div><div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;">${name}</div></div>`;
-  goToStep('region');
-}
-
-function filterRegions(q) {
-  const res=document.getElementById('region-results');
-  if(!selCountry){res.innerHTML='';return;}
-  const known=(REGIONS[selCountry.name]||[]);
-  const matches = q.length<1
-    ? known.slice(0,12)
-    : known.filter(r=>r.toLowerCase().includes(q.toLowerCase())).slice(0,10);
-  if(!matches.length && q.length>0){
-    res.innerHTML=`<div class="search-result-row" onclick="selectRegion('${q}')"><div class="srr-flag">📍</div><div class="srr-main"><div class="srr-name">${q}</div><div class="srr-sub">Add as custom region</div></div><div class="srr-arrow">›</div></div>`;
-    return;
-  }
-  res.innerHTML = matches.map(r=>`
-    <div class="search-result-row" onclick="selectRegion('${r}')">
-      <div class="srr-flag">🗺️</div>
-      <div class="srr-main"><div class="srr-name">${r}</div><div class="srr-sub">${selCountry.name}</div></div>
-      <div class="srr-arrow">›</div>
-    </div>`).join('') || '<p style="font-size:13px;color:var(--sub);text-align:center;padding:16px;">Type to search or add custom region</p>';
-}
-
-function selectRegion(name) {
-  selRegion={name};
-  const flag=selCountry?selCountry.flag:'🌍';
-  document.getElementById('step-place-header').innerHTML=`<div style="display:flex;align-items:center;gap:10px;"><div style="font-size:28px;">${flag}</div><div><div style="font-family:'Fraunces',serif;font-size:18px;font-weight:700;">${name}</div><div style="font-size:12px;color:var(--sub);">${selCountry?selCountry.name:''}</div></div></div>`;
+  document.getElementById('step-place-header').innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="font-size:28px;">${flag}</div>
+      <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;">${name}</div>
+    </div>`;
   goToStep('place');
-  filterPlaces('');
 }
 
-function skipRegion() {
-  selRegion=null;
-  const flag=selCountry?selCountry.flag:'🌍';
-  document.getElementById('step-place-header').innerHTML=`<div style="display:flex;align-items:center;gap:10px;"><div style="font-size:28px;">${flag}</div><div style="font-family:'Fraunces',serif;font-size:18px;font-weight:700;">${selCountry?selCountry.name:''}</div></div>`;
-  goToStep('place');
-  filterPlaces('');
-}
+const CITY_LIST = {
+  'Spain':['Barcelona','Madrid','Seville','Valencia','Granada','Málaga','Bilbao','San Sebastián','Ibiza','Mallorca','Toledo','Córdoba','Santander','Tarragona','Girona'],
+  'Italy':['Rome','Florence','Venice','Milan','Naples','Amalfi','Positano','Cinque Terre','Bologna','Turin','Palermo','Verona','Pisa','Siena','Capri'],
+  'France':['Paris','Nice','Lyon','Marseille','Bordeaux','Strasbourg','Cannes','Avignon','Mont Saint-Michel','Provence','Loire Valley','Normandy'],
+  'Greece':['Athens','Santorini','Mykonos','Thessaloniki','Crete','Rhodes','Corfu','Zakynthos','Nafplio','Delphi'],
+  'Portugal':['Lisbon','Porto','Algarve','Madeira','Azores','Sintra','Évora','Faro','Lagos','Cascais'],
+  'Spain':['Barcelona','Madrid','Seville','Valencia','Granada','Málaga','Bilbao','San Sebastián','Ibiza','Mallorca'],
+  'Japan':['Tokyo','Kyoto','Osaka','Hiroshima','Nara','Hakone','Sapporo','Okinawa','Fukuoka','Kanazawa'],
+  'United Kingdom':['London','Edinburgh','Manchester','Oxford','Cambridge','Bath','Liverpool','Brighton','Bristol','York'],
+  'Germany':['Berlin','Munich','Hamburg','Cologne','Frankfurt','Heidelberg','Dresden','Nuremberg','Stuttgart','Düsseldorf'],
+  'Netherlands':['Amsterdam','Rotterdam','Utrecht','The Hague','Delft','Haarlem','Leiden','Maastricht'],
+  'Turkey':['Istanbul','Cappadocia','Antalya','Bodrum','Ephesus','Pamukkale','Fethiye','Alanya'],
+  'Morocco':['Marrakech','Fès','Rabat','Casablanca','Chefchaouen','Essaouira','Tangier','Agadir'],
+  'Thailand':['Bangkok','Chiang Mai','Phuket','Koh Samui','Pai','Krabi','Koh Phi Phi','Hua Hin'],
+  'USA':['New York','Los Angeles','Miami','Chicago','San Francisco','Las Vegas','New Orleans','Hawaii','Boston','Seattle'],
+  'Australia':['Sydney','Melbourne','Brisbane','Cairns','Gold Coast','Perth','Adelaide','Hobart'],
+  'Japan':['Tokyo','Kyoto','Osaka','Hiroshima','Nara','Hakone','Sapporo','Okinawa'],
+  'Mexico':['Mexico City','Cancún','Tulum','Oaxaca','Guadalajara','San Miguel de Allende','Puerto Vallarta'],
+  'India':['Mumbai','Delhi','Jaipur','Agra','Goa','Varanasi','Kerala','Rajasthan'],
+  'South Korea':['Seoul','Busan','Jeju Island','Gyeongju','Incheon'],
+  'Vietnam':['Hanoi','Ho Chi Minh City','Hoi An','Da Nang','Halong Bay','Hue','Nha Trang'],
+  'Indonesia':['Bali','Jakarta','Yogyakarta','Lombok','Komodo Island'],
+  'UAE':['Dubai','Abu Dhabi','Sharjah'],
+  'Egypt':['Cairo','Luxor','Aswan','Sharm El Sheikh','Hurghada','Alexandria'],
+  'South Africa':['Cape Town','Johannesburg','Kruger','Durban','Garden Route'],
+};
 
 function filterPlaces(q) {
   const res=document.getElementById('place-results');
-  const regionName=selRegion?selRegion.name:'';
-  const known=(PLACES[regionName]||[]);
+  if(!selCountry){res.innerHTML='';return;}
+  const known = CITY_LIST[selCountry.name] || [];
   const matches = q.length<1
     ? known.slice(0,12)
     : known.filter(p=>p.toLowerCase().includes(q.toLowerCase())).slice(0,10);
-  if(!matches.length && q.length>0){
-    res.innerHTML=`<div class="search-result-row" onclick="confirmAddPlace('${q}')"><div class="srr-flag">📍</div><div class="srr-main"><div class="srr-name">${q}</div><div class="srr-sub">Add & generate info with AI</div></div><div class="srr-arrow">✨</div></div>`;
+  if(!matches.length && q.length>1){
+    res.innerHTML=`<div class="search-result-row" onclick="confirmAddPlace('${q}')">
+      <div class="srr-flag">📍</div>
+      <div class="srr-main"><div class="srr-name">${q}</div><div class="srr-sub">Add "${q}" in ${selCountry.name} with AI</div></div>
+      <div class="srr-arrow">✨</div>
+    </div>`;
     return;
   }
   res.innerHTML = matches.map(p=>`
     <div class="search-result-row" onclick="confirmAddPlace('${p}')">
       <div class="srr-flag">📍</div>
-      <div class="srr-main"><div class="srr-name">${p}</div><div class="srr-sub">${regionName?regionName+' · ':''} ${selCountry?selCountry.name:''}</div></div>
+      <div class="srr-main"><div class="srr-name">${p}</div><div class="srr-sub">${selCountry.name}</div></div>
       <div class="srr-arrow">✨</div>
-    </div>`).join('') || '<p style="font-size:13px;color:var(--sub);text-align:center;padding:16px;">Type a place name below</p>';
+    </div>`).join('') || '<p style="font-size:14px;color:var(--sub);padding:16px;">Type a city name</p>';
 }
 
 function addCustomPlace() {
@@ -1331,14 +1337,31 @@ function addCustomPlace() {
   confirmAddPlace(name);
 }
 
+function joinTripFromModal() {
+  const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+  if(code.length !== 6){toast('Enter a 6-letter code');return;}
+  localStorage.setItem('tripCode', code);
+  tripCode = code;
+  // Re-setup Firebase with new code
+  if(window.fbListen) {
+    window.fbListen(code, (data)=>{
+      S = {...S, ...data};
+      try{localStorage.setItem('et3',JSON.stringify(S));}catch(e){}
+      renderAll();
+    });
+  }
+  closeModal('modal-share');
+  toast('Joined trip! 🎉 Syncing...');
+}
+
 async function confirmAddPlace(placeName) {
   if(S.tripCities.some(c=>c.name===placeName)){toast('Already in your trip!');return;}
   const country=selCountry?selCountry.name:'';
-  const region=selRegion?selRegion.name:'';
+  const region='';
   const flag=selCountry?selCountry.flag:'🏙️';
 
   // Show loading
-  ['country','region','place'].forEach(s=>document.getElementById('step-'+s).style.display='none');
+  ['country','place'].forEach(s=>{const el=document.getElementById('step-'+s);if(el)el.style.display='none';});
   document.getElementById('step-loading').style.display='block';
   document.getElementById('loading-place-name').textContent=placeName;
   document.getElementById('loading-msg').textContent='Generating attractions, food & tips with AI...';
