@@ -229,6 +229,22 @@ label:first-child{margin-top:0;}
 .profile-emoji-btn.active{border-color:var(--accent);background:#e8f0fe;}
 .trip-code{font-family:'Fraunces',serif;font-size:36px;font-weight:700;text-align:center;letter-spacing:8px;color:var(--accent);padding:20px;background:var(--fill);border-radius:14px;margin:12px 0;}
 .city-tag{font-size:11px;background:var(--fill);color:var(--sub);padding:3px 8px;border-radius:10px;}
+
+/* TRIPS HOME SCREEN */
+.trips-screen{position:fixed;inset:0;background:var(--bg);z-index:400;max-width:430px;margin:0 auto;display:flex;flex-direction:column;overflow:hidden;}
+.trips-screen-header{padding:calc(env(safe-area-inset-top,0px) + 20px) 20px 16px;background:rgba(255,255,255,0.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.trips-screen-title{font-family:'Fraunces',serif;font-size:28px;font-weight:700;}
+.trips-screen-sub{font-size:14px;color:var(--sub);margin-top:4px;}
+.trips-list{flex:1;overflow-y:auto;padding:16px;}
+.trip-row{display:flex;align-items:center;gap:14px;padding:16px;background:white;border-radius:16px;margin-bottom:10px;cursor:pointer;transition:opacity 0.15s;position:relative;}
+.trip-row:active{opacity:0.7;}
+.trip-row-emoji{font-size:32px;width:56px;height:56px;background:var(--fill);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.trip-row-info{flex:1;}
+.trip-row-name{font-size:17px;font-weight:700;}
+.trip-row-meta{font-size:13px;color:var(--sub);margin-top:3px;}
+.trip-row-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--fill);color:var(--sub);margin-top:6px;display:inline-block;}
+.trip-row-shared{background:#e8f0fe;color:var(--accent);}
+.trips-bottom{padding:16px 16px calc(env(safe-area-inset-bottom,0px) + 16px);background:rgba(255,255,255,0.88);backdrop-filter:blur(20px);border-top:1px solid var(--border);}
 </style>
 </head>
 <body>
@@ -239,33 +255,93 @@ label:first-child{margin-top:0;}
   <div style="font-family:'Fraunces',serif;font-size:28px;font-weight:700;margin-bottom:8px;text-align:center;">Welcome!</div>
   <p style="font-size:15px;color:var(--sub);text-align:center;margin-bottom:24px;">Set up your profile to get started</p>
   <div class="profile-emoji-picker" id="emoji-picker">
-    <button class="profile-emoji-btn active" onclick="pickEmoji(this,'\u{1F60E}')">😎</button>
-    <button class="profile-emoji-btn" onclick="pickEmoji(this,'\u{1F9F3}')">🧳</button>
-    <button class="profile-emoji-btn" onclick="pickEmoji(this,'\u{1F30D}')">🌍</button>
-    <button class="profile-emoji-btn" onclick="pickEmoji(this,'\u{1F3C4}')">🏄</button>
-    <button class="profile-emoji-btn" onclick="pickEmoji(this,'\u{1F392}')">🎒</button>
-    <button class="profile-emoji-btn" onclick="pickEmoji(this,'\u{1F4F8}')">📸</button>
-    <button class="profile-emoji-btn" onclick="pickEmoji(this,'\u{1F355}')">🍕</button>
-    <button class="profile-emoji-btn" onclick="pickEmoji(this,'\u{1F3B5}')">🎵</button>
+    <button class="profile-emoji-btn active" onclick="pickEmoji(this,'😎')">😎</button>
+    <button class="profile-emoji-btn" onclick="pickEmoji(this,'🧳')">🧳</button>
+    <button class="profile-emoji-btn" onclick="pickEmoji(this,'🌍')">🌍</button>
+    <button class="profile-emoji-btn" onclick="pickEmoji(this,'🏄')">🏄</button>
+    <button class="profile-emoji-btn" onclick="pickEmoji(this,'🎒')">🎒</button>
+    <button class="profile-emoji-btn" onclick="pickEmoji(this,'📸')">📸</button>
+    <button class="profile-emoji-btn" onclick="pickEmoji(this,'🍕')">🍕</button>
+    <button class="profile-emoji-btn" onclick="pickEmoji(this,'🎵')">🎵</button>
   </div>
   <input type="text" id="profile-name-input" placeholder="Your name" style="text-align:center;font-size:18px;margin-bottom:16px;">
   <button class="btn-primary" onclick="saveProfile()">Get Started →</button>
 </div>
 
-<!-- JOIN TRIP SCREEN -->
-<div class="profile-screen" id="join-screen" style="display:none;">
-  <div style="font-size:56px;margin-bottom:16px;">🔗</div>
-  <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:700;margin-bottom:8px;text-align:center;">Join a Trip</div>
-  <p style="font-size:15px;color:var(--sub);text-align:center;margin-bottom:24px;">Enter the 6-letter code your travel partner shared</p>
-  <input type="text" id="join-code-input" placeholder="ABC123" style="text-align:center;font-size:24px;letter-spacing:6px;text-transform:uppercase;margin-bottom:16px;" maxlength="6">
-  <button class="btn-primary" style="margin-bottom:10px;" onclick="joinTrip()">Join Trip</button>
-  <button class="btn-ghost" style="width:100%;" onclick="showMain()">Create my own trip instead</button>
+<!-- TRIPS HOME SCREEN -->
+<div class="trips-screen" id="trips-screen" style="display:none;">
+  <div class="trips-screen-header">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div class="trips-screen-title">My Trips</div>
+        <div class="trips-screen-sub" id="trips-screen-sub">Your adventures</div>
+      </div>
+      <div class="avatar" id="trips-avatar" style="background:var(--accent);cursor:pointer;" onclick="openModal('modal-profile')">😎</div>
+    </div>
+  </div>
+  <div class="trips-list" id="trips-list">
+    <div class="empty" style="padding-top:60px;">
+      <div class="empty-icon">🗺️</div>
+      <div class="empty-title">No trips yet</div>
+      <div class="empty-sub">Create your first trip below</div>
+    </div>
+  </div>
+  <div class="trips-bottom">
+    <div style="display:flex;gap:10px;">
+      <button class="btn-primary" style="flex:1;" onclick="openModal('modal-new-trip')">+ New Trip</button>
+      <button class="btn-ghost" onclick="openModal('modal-join-trip')">Join Trip</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW TRIP MODAL -->
+<div class="modal-overlay" id="modal-new-trip" onclick="closeBg(event,'modal-new-trip')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">New Trip</div>
+      <button class="btn-text" onclick="closeModal('modal-new-trip')">Cancel</button>
+    </div>
+    <div class="modal-body">
+      <label>Trip Name</label>
+      <input type="text" id="new-trip-name" placeholder="e.g. Europe Summer 2025">
+      <label>Pick an Emoji</label>
+      <div class="profile-emoji-picker" id="trip-emoji-picker">
+        <button class="profile-emoji-btn active" onclick="pickTripEmoji(this,'✈️')">✈️</button>
+        <button class="profile-emoji-btn" onclick="pickTripEmoji(this,'🌍')">🌍</button>
+        <button class="profile-emoji-btn" onclick="pickTripEmoji(this,'🏖️')">🏖️</button>
+        <button class="profile-emoji-btn" onclick="pickTripEmoji(this,'🏔️')">🏔️</button>
+        <button class="profile-emoji-btn" onclick="pickTripEmoji(this,'🗺️')">🗺️</button>
+        <button class="profile-emoji-btn" onclick="pickTripEmoji(this,'🎒')">🎒</button>
+        <button class="profile-emoji-btn" onclick="pickTripEmoji(this,'🚂')">🚂</button>
+        <button class="profile-emoji-btn" onclick="pickTripEmoji(this,'⛵')">⛵</button>
+      </div>
+      <div style="height:8px;"></div>
+      <button class="btn-primary" onclick="createNewTrip()">Create Trip →</button>
+    </div>
+  </div>
+</div>
+
+<!-- JOIN TRIP MODAL -->
+<div class="modal-overlay" id="modal-join-trip" onclick="closeBg(event,'modal-join-trip')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Join a Trip</div>
+      <button class="btn-text" onclick="closeModal('modal-join-trip')">Cancel</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--sub);margin-bottom:12px;">Enter the code your travel partner shared with you.</p>
+      <input type="text" id="join-trip-code-input" placeholder="e.g. FBM5ZJ" style="text-align:center;font-size:24px;letter-spacing:8px;text-transform:uppercase;margin-bottom:12px;" maxlength="8" onkeydown="if(event.key==='Enter'){event.preventDefault();joinTripFromHome();}">
+      <button class="btn-primary green" type="button" onclick="joinTripFromHome()">Join Trip →</button>
+    </div>
+  </div>
 </div>
 
 <div class="top-bar" id="main-topbar">
   <div class="top-bar-inner">
     <div class="top-bar-left">
-      <div class="avatar" id="my-avatar" style="background:var(--accent);" onclick="openModal('modal-profile')">😎</div>
+      <button class="btn-icon" onclick="showTripsScreen()" style="font-size:22px;color:var(--accent);">‹</button>
     </div>
     <div class="top-bar-title" id="trip-title">My Trip</div>
     <div class="top-bar-right">
@@ -275,7 +351,7 @@ label:first-child{margin-top:0;}
   </div>
 </div>
 
-<div class="content">
+<div class="content" id="main-content">
 
   <!-- ══ MY TRIP TAB ══ -->
   <div class="tab-content active" id="tab-mytrip">
@@ -401,7 +477,7 @@ label:first-child{margin-top:0;}
 
 </div>
 
-<div class="tab-bar">
+<div class="tab-bar" id="main-tabbar">
   <button class="tab-btn active" onclick="switchTab('mytrip',this)"><div class="icon">🧳</div>MY TRIP</button>
   <button class="tab-btn" onclick="switchTab('cities',this)"><div class="icon">🏙️</div>ADD PLACE</button>
   <button class="tab-btn" onclick="switchTab('budget',this)"><div class="icon">💰</div>BUDGET</button>
@@ -516,30 +592,12 @@ label:first-child{margin-top:0;}
 <div class="modal-overlay" id="modal-share" onclick="closeBg(event,'modal-share')">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
-    <div class="modal-header"><div class="modal-title">Trip Sharing</div><button class="btn-text" onclick="closeModal('modal-share')">Done</button></div>
+    <div class="modal-header"><div class="modal-title">Share Trip</div><button class="btn-text" onclick="closeModal('modal-share')">Done</button></div>
     <div class="modal-body">
-
-      <!-- Toggle buttons -->
-      <div style="display:flex;background:var(--border);border-radius:10px;padding:2px;margin-bottom:20px;">
-        <button id="share-tab-my" onclick="showShareTab('my')" style="flex:1;padding:8px;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;background:white;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,0.12);">🔑 My Trip Code</button>
-        <button id="share-tab-join" onclick="showShareTab('join')" style="flex:1;padding:8px;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;background:none;color:var(--sub);">🔗 Join a Trip</button>
-      </div>
-
-      <!-- My Trip panel -->
-      <div id="share-panel-my">
-        <p style="font-size:14px;color:var(--sub);margin-bottom:10px;">Share this code with your travel partner. They tap ＋ → Join a Trip → enter the code.</p>
-        <div class="trip-code" id="share-trip-code">——</div>
-        <button class="btn-primary" onclick="copyTripCode()">📋 Copy Code</button>
-        <div style="margin-top:12px;font-size:14px;color:var(--sub);text-align:center;" id="partner-status">No partner connected yet</div>
-      </div>
-
-      <!-- Join Trip panel -->
-      <div id="share-panel-join" style="display:none;">
-        <p style="font-size:14px;color:var(--sub);margin-bottom:10px;">Enter the 6-letter code your travel partner shared with you.</p>
-        <input type="text" id="join-code-input" placeholder="e.g. FBM5ZJ" style="text-align:center;font-size:24px;letter-spacing:8px;text-transform:uppercase;margin-bottom:12px;" maxlength="8" onkeydown="if(event.key==='Enter'){event.preventDefault();joinTripFromModal();}">
-        <button class="btn-primary green" type="button" onclick="event.stopPropagation();joinTripFromModal();">Join Their Trip →</button>
-      </div>
-
+      <p style="font-size:14px;color:var(--sub);margin-bottom:10px;">Share this code with your travel group. Anyone who enters it will join this trip and see everything in real time.</p>
+      <div class="trip-code" id="share-trip-code">——</div>
+      <button class="btn-primary" onclick="copyTripCode()">📋 Copy Code</button>
+      <div style="margin-top:12px;font-size:13px;color:var(--sub);text-align:center;" id="partner-status"></div>
     </div>
   </div>
 </div>
@@ -648,14 +706,23 @@ let S = {
 };
 let activeCityId=null, activeDayId=null;
 
-// ── PROFILE ──
+// ── PROFILE & TRIPS ──
 let myProfile = {name:'', emoji:'😎'};
-let tripCode = '';
 let _selectedEmoji = '😎';
+let _selectedTripEmoji = '✈️';
+let allTrips = [];
+let currentTripCode = '';
+let _fbSaveTimer = null;
 
 function pickEmoji(btn, emoji) {
   _selectedEmoji = emoji;
   document.querySelectorAll('.profile-emoji-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function pickTripEmoji(btn, emoji) {
+  _selectedTripEmoji = emoji;
+  document.querySelectorAll('#trip-emoji-picker .profile-emoji-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
 }
 
@@ -665,11 +732,8 @@ function saveProfile() {
   myProfile = {name, emoji:_selectedEmoji};
   localStorage.setItem('myProfile', JSON.stringify(myProfile));
   document.getElementById('profile-screen').style.display='none';
-  updateAvatars();
-  // Check if there's a trip code to join
-  const pendingCode = localStorage.getItem('pendingJoinCode');
-  if(pendingCode){ localStorage.removeItem('pendingJoinCode'); doJoinTrip(pendingCode); }
-  else { showMain(); }
+  updateProfileUI();
+  showTripsScreen();
 }
 
 function updateProfile() {
@@ -677,76 +741,142 @@ function updateProfile() {
   if(!name){ toast('Please enter your name'); return; }
   myProfile = {name, emoji:_selectedEmoji};
   localStorage.setItem('myProfile', JSON.stringify(myProfile));
-  updateAvatars(); closeModal('modal-profile'); toast('Profile updated!');
+  updateProfileUI(); closeModal('modal-profile'); toast('Profile updated!');
 }
 
-function updateAvatars() {
-  document.getElementById('my-avatar').textContent = myProfile.emoji;
-  document.getElementById('trip-title').textContent = S.tripName || 'My Trip';
+function updateProfileUI() {
+  const el = document.getElementById('trips-avatar');
+  if(el) el.textContent = myProfile.emoji;
 }
 
 function loadProfile() {
   const saved = localStorage.getItem('myProfile');
-  if(saved) { myProfile = JSON.parse(saved); return true; }
+  if(saved){ myProfile = JSON.parse(saved); return true; }
   return false;
 }
 
-// ── TRIP SHARING ──
-function generateTripCode() {
+function loadAllTrips() {
+  const saved = localStorage.getItem('allTrips');
+  if(saved) allTrips = JSON.parse(saved);
+}
+
+function saveAllTrips() {
+  localStorage.setItem('allTrips', JSON.stringify(allTrips));
+}
+
+function generateCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   return Array.from({length:6}, ()=>chars[Math.floor(Math.random()*chars.length)]).join('');
 }
 
-function getTripCode() {
-  let code = localStorage.getItem('tripCode');
-  if(!code){ code = generateTripCode(); localStorage.setItem('tripCode', code); }
-  return code;
+function createNewTrip() {
+  const nameEl = document.getElementById('new-trip-name');
+  if(!nameEl){ alert('ERROR: input not found'); return; }
+  const name = nameEl.value.trim();
+  alert('Name: "' + name + '" | Emoji: ' + _selectedTripEmoji);
+  if(!name){ toast('Enter a trip name'); return; }
+  const code = generateCode();
+  const trip = {id:uid(), name, emoji:_selectedTripEmoji, tripCode:code, createdAt:Date.now()};
+  allTrips.push(trip);
+  saveAllTrips();
+  closeModal('modal-new-trip');
+  nameEl.value='';
+  openTrip(trip);
+}
+
+function joinTripFromHome() {
+  const inp = document.getElementById('join-trip-code-input');
+  const code = inp.value.replace(/\s/g,'').toUpperCase();
+  if(code.length < 4){ toast('Enter the trip code'); return; }
+  let trip = allTrips.find(t=>t.tripCode===code);
+  if(!trip) {
+    trip = {id:uid(), name:'Shared Trip', emoji:'🔗', tripCode:code, createdAt:Date.now(), shared:true};
+    allTrips.push(trip);
+    saveAllTrips();
+  }
+  inp.value='';
+  closeModal('modal-join-trip');
+  openTrip(trip);
+}
+
+function openTrip(trip) {
+  window._TRIP_CODE = trip.tripCode;
+  currentTripCode = trip.tripCode;
+  S = {tripName:trip.name, currency:{symbol:'€',code:'EUR'}, budget:0, tripCities:[], globalExpenses:[], packingList:[]};
+  try {
+    const cached = localStorage.getItem('trip_'+trip.tripCode);
+    if(cached) S = {...S, ...JSON.parse(cached)};
+  } catch(e){ console.warn('Cache load error:', e); }
+
+  // Show main app, hide trips screen
+  const tripsScreen = document.getElementById('trips-screen');
+  const topbar = document.getElementById('main-topbar');
+  const tabBar = document.getElementById('main-tabbar');
+  const contentEl = document.getElementById('main-content');
+
+  if(tripsScreen) tripsScreen.style.display='none';
+  if(topbar) topbar.style.display='flex';
+  if(tabBar) tabBar.style.display='flex';
+  if(contentEl) contentEl.style.display='block';
+
+  document.getElementById('trip-title').textContent = trip.name;
+  if(S.budget) document.getElementById('budget-input').value=S.budget;
+  document.querySelectorAll('.curr-btn').forEach(b=>b.classList.toggle('active',b.textContent.includes(S.currency.code)));
+  document.querySelectorAll('#curr-symbol,#city-exp-curr,#global-exp-curr').forEach(el=>el.textContent=S.currency.symbol);
+  initPack();
+  renderAll();
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-btn')[0].classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-mytrip').classList.add('active');
+  setupFirebaseSyncForTrip(trip.tripCode);
+}
+
+function showTripsScreen() {
+  document.getElementById('trips-screen').style.display='flex';
+  document.getElementById('main-topbar').style.display='none';
+  const tabBar = document.getElementById('main-tabbar');
+  const contentEl = document.getElementById('main-content');
+  if(tabBar) tabBar.style.display='none';
+  if(contentEl) contentEl.style.display='none';
+  renderTripsScreen();
+}
+
+function renderTripsScreen() {
+  updateProfileUI();
+  document.getElementById('trips-screen-sub').textContent =
+    myProfile.name ? 'Hello, '+myProfile.name+'!' : 'Your adventures';
+  const list = document.getElementById('trips-list');
+  if(!allTrips.length) {
+    list.innerHTML='<div class="empty" style="padding-top:60px;"><div class="empty-icon">🗺️</div><div class="empty-title">No trips yet</div><div class="empty-sub">Create your first trip below</div></div>';
+    return;
+  }
+  list.innerHTML = allTrips.slice().reverse().map(trip=>`
+    <div class="trip-row" onclick="openTrip(${JSON.stringify(trip).replace(/"/g,'&quot;')})">
+      <div class="trip-row-emoji">${trip.emoji}</div>
+      <div class="trip-row-info">
+        <div class="trip-row-name">${trip.name}</div>
+        <div class="trip-row-meta">${new Date(trip.createdAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</div>
+        <span class="trip-row-badge ${trip.shared?'trip-row-shared':''}">${trip.shared?'🔗 Shared':'🔑 '+trip.tripCode}</span>
+      </div>
+      <div style="color:var(--sub);font-size:20px;">›</div>
+    </div>`).join('');
 }
 
 function openShareModal() {
-  const code = window._TRIP_CODE || localStorage.getItem('tripCode') || '------';
-  tripCode = code;
+  const code = window._TRIP_CODE || '------';
   document.getElementById('share-trip-code').textContent = code;
   openModal('modal-share');
 }
 
 function copyTripCode() {
-  navigator.clipboard.writeText(tripCode).then(()=>toast('Code copied!')).catch(()=>{
-    // Fallback
-    const el = document.getElementById('share-trip-code');
-    const range = document.createRange();
-    range.selectNode(el);
-    window.getSelection().removeAllRanges();
-    window.getSelection().addRange(range);
-    toast('Long-press to copy: ' + tripCode);
-  });
+  const code = window._TRIP_CODE || '';
+  navigator.clipboard.writeText(code)
+    .then(()=>toast('Code copied! Share with your group'))
+    .catch(()=>toast('Your code: '+code));
 }
 
-function joinTrip() {
-  const code = document.getElementById('join-code-input').value.trim().toUpperCase();
-  if(code.length !== 6){ toast('Enter a 6-letter code'); return; }
-  localStorage.setItem('tripCode', code);
-  doJoinTrip(code);
-}
-
-function doJoinTrip(code) {
-  // Update Firebase listener to use partner's trip code
-  if(window.fbListen) {
-    window.fbListen(code, (data)=>{
-      S = {...S, ...data};
-      try{localStorage.setItem('et3',JSON.stringify(S));}catch(e){}
-      renderAll();
-      toast('Joined trip! Welcome aboard 🎉');
-    });
-  }
-  showMain();
-}
-
-function showMain() {
-  document.getElementById('profile-screen').style.display='none';
-  document.getElementById('join-screen').style.display='none';
-  updateAvatars();
-}
+function showMain() { showTripsScreen(); }
 
 function renderAll() {
   if(S.tripName) document.getElementById('trip-title').textContent = S.tripName;
@@ -754,19 +884,42 @@ function renderAll() {
   document.querySelectorAll('.curr-btn').forEach(b=>b.classList.toggle('active',b.textContent.includes(S.currency.code)));
   document.querySelectorAll('#curr-symbol,#city-exp-curr,#global-exp-curr').forEach(el=>el.textContent=S.currency.symbol);
   renderMyTrip();renderGlobalExp();refreshBudget();renderPacking();
-  initPack(); filterCountries('');
+  initPack();
 }
 
-let _fbSaveTimer = null;
 function save() {
-  try { localStorage.setItem('et3', JSON.stringify(S)); } catch(e) {}
+  try { localStorage.setItem('trip_'+(window._TRIP_CODE||'default'), JSON.stringify(S)); } catch(e) {}
   clearTimeout(_fbSaveTimer);
   _fbSaveTimer = setTimeout(() => {
     if(window.fbSave) window.fbSave(JSON.parse(JSON.stringify(S)));
   }, 1000);
 }
+
 function load() {
   try { const d=localStorage.getItem('et3'); if(d) S={...S,...JSON.parse(d)}; } catch(e) {}
+}
+
+let _fbListenerUnsubscribe = null;
+function setupFirebaseSyncForTrip(code) {
+  if(_fbListenerUnsubscribe) { try{_fbListenerUnsubscribe();}catch(e){} }
+  function doSetup() {
+    _fbListenerUnsubscribe = window.fbListen(code, (data) => {
+      if(data && Object.keys(data).length > 0 && code === window._TRIP_CODE) {
+        S = {...S, ...data};
+        try { localStorage.setItem('trip_'+code, JSON.stringify(S)); } catch(e) {}
+        renderAll();
+      }
+    });
+  }
+  if(window.fbListen) doSetup();
+  else {
+    let attempts=0;
+    const iv=setInterval(()=>{
+      attempts++;
+      if(window.fbListen){clearInterval(iv);doSetup();}
+      if(attempts>20)clearInterval(iv);
+    },300);
+  }
 }
 
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
@@ -785,6 +938,10 @@ function switchTab(name,btn){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   btn.classList.add('active');
+  if(name==='cities') {
+    goToStep('country');
+    filterCountries('');
+  }
 }
 function switchSubTab(name,btn){
   ['days','food','sights','expenses','notes'].forEach(n=>{document.getElementById('sub-'+n).style.display='none';});
@@ -1509,78 +1666,23 @@ function renderPacking(){
 }
 
 // ── INIT ──
-load(); initPack();
+loadProfile();
+loadAllTrips();
 
-// Profile setup
-const hasProfile = loadProfile();
-if(!hasProfile) {
+// Hide main app initially
+document.getElementById('main-topbar').style.display='none';
+document.getElementById('main-tabbar').style.display='none';
+document.getElementById('main-content').style.display='none';
+
+if(!localStorage.getItem('myProfile')) {
   document.getElementById('profile-screen').style.display='flex';
 } else {
-  updateAvatars();
+  updateProfileUI();
+  showTripsScreen();
 }
 
-if(S.tripName) document.getElementById('trip-title').textContent = S.tripName;
-if(S.budget) document.getElementById('budget-input').value = S.budget;
-document.querySelectorAll('.curr-btn').forEach(b=>b.classList.toggle('active',b.textContent.includes(S.currency.code)));
-document.querySelectorAll('#curr-symbol,#city-exp-curr,#global-exp-curr').forEach(el=>el.textContent=S.currency.symbol);
-renderMyTrip();renderGlobalExp();refreshBudget();renderPacking();
+_selectedTripEmoji = '✈️';
 filterCountries('');
-
-// Trip code
-tripCode = getTripCode();
-document.getElementById('share-trip-code').textContent = tripCode;
-
-// Edit profile modal - pre-fill
-function openProfileModal(){
-  document.getElementById('profile-edit-name').value = myProfile.name;
-  _selectedEmoji = myProfile.emoji;
-  document.querySelectorAll('.profile-emoji-btn').forEach(b=>{
-    if(b.textContent===myProfile.emoji) b.classList.add('active');
-    else b.classList.remove('active');
-  });
-  openModal('modal-profile');
-}
-document.getElementById('my-avatar').onclick = openProfileModal;
-
-// Firebase real-time sync
-let _fbFirstLoad = true;
-function setupFirebaseSync() {
-  if(!window.fbListen) return;
-  window.fbListen((data) => {
-    if(_fbFirstLoad) {
-      _fbFirstLoad = false;
-      if(data && Object.keys(data).length > 0) {
-        S = {...S, ...data};
-        try { localStorage.setItem('et3', JSON.stringify(S)); } catch(e) {}
-        renderAll();
-        toast('☁️ Synced');
-      } else {
-        // No data under trip code — migrate from mytrip if exists
-        if(window.fbListen) {
-          window.fbListen('mytrip', (oldData) => {
-            if(oldData && Object.keys(oldData).length > 0 && oldData.tripCities) {
-              S = {...S, ...oldData};
-              try { localStorage.setItem('et3', JSON.stringify(S)); } catch(e) {}
-              // Save under new trip code
-              if(window.fbSave) window.fbSave(JSON.parse(JSON.stringify(S)));
-              renderAll();
-              toast('☁️ Data migrated!');
-            }
-          });
-        }
-      }
-    } else {
-      if(data && Object.keys(data).length > 0) {
-        S = {...S, ...data};
-        try { localStorage.setItem('et3', JSON.stringify(S)); } catch(e) {}
-        renderMyTrip();renderGlobalExp();refreshBudget();renderPacking();
-      }
-    }
-  });
-}
-
-if(window.firebaseReady) setupFirebaseSync();
-else document.addEventListener('firebase-ready', setupFirebaseSync);
 </script>
 </body>
 </html>
